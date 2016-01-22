@@ -17,6 +17,7 @@
 /* Declare static char *compiler_opts  in config.h */
 #define DNSMASQ_COMPILE_OPTS
 
+#include <sysrepo.h>
 #include "dnsmasq.h"
 
 struct daemon *daemon;
@@ -31,6 +32,46 @@ static void async_event(int pipe, time_t now);
 static void fatal_event(struct event_desc *ev, char *msg);
 static int read_event(int fd, struct event_desc *evp, char **msg);
 static void poll_resolv(int force, int do_reload, time_t now);
+
+void read_sysrepo_config()
+{
+  sr_conn_ctx_t *conn = NULL;
+  sr_session_ctx_t *sess = NULL;
+  sr_val_t *value = NULL;
+  int rc = SR_ERR_OK;
+
+  rc = sr_connect("dnsmasq", true, &conn);
+  if (SR_ERR_OK != rc) {
+    return;
+  }
+
+  rc = sr_session_start(conn, NULL, SR_DS_STARTUP, &sess);
+  if (SR_ERR_OK != rc) {
+    sr_disconnect(conn);
+    return;
+  }
+
+  rc = sr_get_item(sess, "/dnsmasq-cfg:dnsmasq/port", &value);
+  if (SR_ERR_OK == rc) {
+    daemon->port = value->data.int32_val;
+    sr_free_val_t(value);
+  }
+
+  rc = sr_get_item(sess, "/dnsmasq-cfg:dnsmasq/username", &value);
+  if (SR_ERR_OK == rc) {
+    daemon->username = strdup(value->data.string_val);
+    sr_free_val_t(value);
+  }
+
+  rc = sr_get_item(sess, "/dnsmasq-cfg:dnsmasq/groupname", &value);
+  if (SR_ERR_OK == rc) {
+    daemon->groupname = strdup(value->data.string_val);
+    sr_free_val_t(value);
+  }
+
+  sr_session_stop(sess);
+  sr_disconnect(conn);
+}
 
 int main (int argc, char **argv)
 {
@@ -87,7 +128,9 @@ int main (int argc, char **argv)
   rand_init(); /* Must precede read_opts() */
   
   read_opts(argc, argv, compile_opts);
- 
+
+  read_sysrepo_config(); /* read supported config from sysrepo datastore */
+
   if (daemon->edns_pktsz < PACKETSZ)
     daemon->edns_pktsz = PACKETSZ;
 

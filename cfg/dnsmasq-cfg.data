@@ -1,0 +1,7 @@
+<module>
+  <dnsmasq xmlns="urn:ietf:params:xml:ns:yang:dnsmasq-cfg">
+    <port>534</port>
+    <username>root</username>
+    <groupname>root</groupname>
+  </dnsmasq>
+</module>

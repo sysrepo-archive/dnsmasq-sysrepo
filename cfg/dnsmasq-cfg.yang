@@ -1,0 +1,39 @@
+module dnsmasq-cfg {
+  namespace "urn:ietf:params:xml:ns:yang:dnsmasq-cfg";
+  prefix dns;
+
+  description
+    "Experimental dnsmasq configuration YANG model.";
+  contact
+    "sysrepo@sysrepo.org";
+
+  revision 2016-01-22 {
+    description
+      "Inital revision";
+  }
+
+  container dnsmasq {
+    config true;
+
+    leaf port {
+      type int32;
+      default 53;
+      description "Listen on speciefed port. Setting this to zero completely disables DNS function, leaving only DHCP and/or TFTP.";
+    }
+
+    leaf username {
+      type string;
+      default "nobody";
+      description "Specify the userid to which dnsmasq will change after startup. Dnsmasq must normally be started as root,
+        but it will drop root privileges after startup by changing id to another user. Normally this user is 'nobody'
+        but that can be over-ridden with this switch.";
+    }
+
+    leaf groupname {
+      type string;
+      default "dip";
+      description "Specify the group which dnsmasq will run as. The defaults to 'dip', if available, to facilitate access to 
+        /etc/ppp/resolv.conf which is not normally world readable.";
+    }
+  }
+}
