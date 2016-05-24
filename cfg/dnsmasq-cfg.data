@@ -1,7 +1,15 @@
-<module>
-  <dnsmasq xmlns="urn:ietf:params:xml:ns:yang:dnsmasq-cfg">
-    <port>534</port>
-    <username>root</username>
-    <groupname>root</groupname>
-  </dnsmasq>
-</module>
+<dnsmasq xmlns="urn:ietf:params:xml:ns:yang:dnsmasq-cfg">
+  <username>root</username>
+  <groupname>root</groupname>
+  <dns-server>
+    <enabled/>
+    <port>5353</port>
+  </dns-server>
+  <dhcp-server>
+    <dhcp-pool>
+      <start-addr>192.168.1.50</start-addr>
+      <end-addr>192.168.1.60</end-addr>
+      <lease-time>10000</lease-time>
+    </dhcp-pool>
+  </dhcp-server>
+</dnsmasq>

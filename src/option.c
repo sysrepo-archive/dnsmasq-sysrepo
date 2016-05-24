@@ -155,6 +155,7 @@ struct myoption {
 #define LOPT_DNSSEC_STAMP  343
 #define LOPT_TFTP_NO_FAIL  344
 #define LOPT_DNS_CLIENT_ID 355
+#define LOPT_LOAD_RUNNING  356
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -315,6 +316,7 @@ static const struct myoption opts[] =
     { "quiet-dhcp6", 0, 0, LOPT_QUIET_DHCP6 },
     { "quiet-ra", 0, 0, LOPT_QUIET_RA },
     { "dns-loop-detect", 0, 0, LOPT_LOOP_DETECT },
+    { "load-running", 0, 0, LOPT_LOAD_RUNNING },
     { NULL, 0, 0, 0 }
   };
 
@@ -3995,6 +3997,9 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
       }
 #endif
 		
+    case LOPT_LOAD_RUNNING:
+        daemon->sysrepo_load_running = 1;
+      break;
     default:
       ret_err(_("unsupported option (check that dnsmasq was compiled with DHCP/TFTP/DNSSEC/DBus support)"));
       

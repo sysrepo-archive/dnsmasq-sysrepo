@@ -1053,6 +1053,7 @@ extern struct daemon {
   char *addrbuff;
   char *addrbuff2; /* only allocated when OPT_EXTRALOG */
 
+  int sysrepo_load_running;
 } *daemon;
 
 /* cache.c */

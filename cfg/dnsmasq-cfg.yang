@@ -15,12 +15,6 @@ module dnsmasq-cfg {
   container dnsmasq {
     config true;
 
-    leaf port {
-      type int32;
-      default 53;
-      description "Listen on speciefed port. Setting this to zero completely disables DNS function, leaving only DHCP and/or TFTP.";
-    }
-
     leaf username {
       type string;
       default "nobody";
@@ -34,6 +28,33 @@ module dnsmasq-cfg {
       default "dip";
       description "Specify the group which dnsmasq will run as. The defaults to 'dip', if available, to facilitate access to 
         /etc/ppp/resolv.conf which is not normally world readable.";
+    }
+
+    container dns-server {
+      leaf enabled {
+        type empty;
+      }
+      leaf port {
+        type uint32;
+        default 53;
+        description "Listen on speciefed port.";
+      }
+    }
+
+    container dhcp-server {
+      list dhcp-pool {
+        key "start-addr end-addr";
+        leaf start-addr {
+          type string;
+        }
+        leaf end-addr {
+          type string;
+        }
+        leaf lease-time {
+          type uint32;
+          default 3600;
+        }
+      }
     }
   }
 }
