@@ -49,9 +49,8 @@ CFG = cfg
 
 # sysrepo datastore directories
 
-SYSREPO_DIR      = /etc/sysrepo/
-SYSREPO_DATA_DIR = $(SYSREPO_DIR)data/
-SYSREPO_YANG_DIR = $(SYSREPO_DIR)yang/
+SYSREPO_DIR        = /etc/sysrepo/
+SYSREPO_SCHEMA_DIR = $(SYSREPO_DIR)yang/
 
 #################################################################
 
@@ -110,8 +109,7 @@ install-common :
 	$(INSTALL) -d $(DESTDIR)$(BINDIR) -d $(DESTDIR)$(MANDIR)/man8
 	$(INSTALL) -m 644 $(MAN)/dnsmasq.8 $(DESTDIR)$(MANDIR)/man8 
 	$(INSTALL) -m 755 $(BUILDDIR)/dnsmasq $(DESTDIR)$(BINDIR)
-	$(INSTALL) -m 644 $(CFG)/*.y* $(SYSREPO_YANG_DIR)
-	$(INSTALL) -m 644 $(CFG)/*.data* $(SYSREPO_DATA_DIR)
+	$(INSTALL) -m 644 $(CFG)/*.yang $(SYSREPO_SCHEMA_DIR)
 
 all-i18n : $(BUILDDIR)
 	@cd $(BUILDDIR) && $(MAKE) \

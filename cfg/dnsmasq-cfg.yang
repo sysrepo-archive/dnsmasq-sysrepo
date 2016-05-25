@@ -1,9 +1,13 @@
-module dnsmasq-cfg {
-  namespace "urn:ietf:params:xml:ns:yang:dnsmasq-cfg";
+module dnsmasq {
+  namespace "urn:ietf:params:xml:ns:yang:dnsmasq";
   prefix dns;
 
+  import ietf-inet-types {
+    prefix inet;
+  }
+
   description
-    "Experimental dnsmasq configuration YANG model.";
+    "Experimental dnsmasq tool YANG model.";
   contact
     "sysrepo@sysrepo.org";
 
@@ -12,7 +16,7 @@ module dnsmasq-cfg {
       "Inital revision";
   }
 
-  container dnsmasq {
+  container dnsmasq-cfg {
     config true;
 
     leaf username {
@@ -31,28 +35,48 @@ module dnsmasq-cfg {
     }
 
     container dns-server {
+      description "DNS server subsystem configuration.";
+
       leaf enabled {
-        type empty;
+        type boolean;
+        default true;
+        description "Controls whether DNS server is enabled or disabled.";
       }
+
       leaf port {
         type uint32;
         default 53;
-        description "Listen on speciefed port.";
+        description "Port that DNS serevr is bound to.";
       }
     }
 
     container dhcp-server {
+      description "DHCP server subsystem configuration.";
+
+      leaf enabled {
+        type boolean;
+        default true;
+        description "Controls whether DHCP server is enabled or disabled.";
+      }
+
       list dhcp-pool {
         key "start-addr end-addr";
+        description "DHCP pool configuration. Addresses will be given out from the range start-addr to end-addr.";
+
         leaf start-addr {
-          type string;
+          type inet:ipv4-address-no-zone;
+          description "First address of the DHCP pool.";
         }
+
         leaf end-addr {
-          type string;
+          type inet:ipv4-address-no-zone;
+          description "Last address of the DHCP pool.";
         }
+
         leaf lease-time {
           type uint32;
           default 3600;
+          description "Time period for which the assigned IP address will be leased.";
         }
       }
     }

@@ -33,22 +33,27 @@ static void fatal_event(struct event_desc *ev, char *msg);
 static int read_event(int fd, struct event_desc *evp, char **msg);
 static void poll_resolv(int force, int do_reload, time_t now);
 
+/* initialize sysrepo connection & session */
 static void sysrepo_init(sr_conn_ctx_t **connection, sr_session_ctx_t **session)
 {
   int rc = SR_ERR_OK;
 
   rc = sr_connect("dnsmasq", SR_CONN_DEFAULT, connection);
   if (SR_ERR_OK != rc) {
+    fprintf(stderr, "Error: %s\n", sr_strerror(rc));
     return;
   }
 
+  /* normally bind to the STARTUP datastore, but in case that --load-running option was provided bind to RUNNING */
   rc = sr_session_start(*connection, (daemon->sysrepo_load_running ? SR_DS_RUNNING : SR_DS_STARTUP), SR_SESS_DEFAULT, session);
   if (SR_ERR_OK != rc) {
     sr_disconnect(*connection);
+    fprintf(stderr, "Error: %s\n", sr_strerror(rc));
     return;
   }
 }
 
+/* cleans up sysrepo connection & session */
 static void sysrepo_cleanup(sr_conn_ctx_t *connection, sr_session_ctx_t *session, sr_subscription_ctx_t *subscription)
 {
   sr_unsubscribe(session, subscription);
@@ -56,54 +61,64 @@ static void sysrepo_cleanup(sr_conn_ctx_t *connection, sr_session_ctx_t *session
   sr_disconnect(connection);
 }
 
+/* callback automatically callend whenever the configuration of dnsmasq YANG module has been changed in sysrepo */
 static void sysrepo_config_change_cb(sr_session_ctx_t *session, const char *module_name, void *private_ctx)
 {
   (void)(session);
   (void)(module_name);
   (void)(private_ctx);
-  printf("\n\n ========== CONFIG HAS CHANGED ==========\n\n");
+  char exe[1024] = { 0, };
+  int ret = 0, i = 0;
 
-  char exe[1024];
-      int ret;
+  printf("\n\n========== DNSMASQ CONFIG HAS CHANGED ==========\n\n");
 
-      ret = readlink("/proc/self/exe",exe,sizeof(exe)-1);
-      if(ret ==-1) {
-          fprintf(stderr,"ERRORRRRR\n");
-          exit(1);
-      }
-      exe[ret] = 0;
-      printf("I am %s\n",exe);
+  /* since we don't see much into the dnsmasq implementation, we do a complete re-load of the process
+   * instead of just re-initialization from the new configuration */
 
-      int i;
-      for (i = 0; i < sysconf(_SC_OPEN_MAX); i++)
-          if (i != STDOUT_FILENO && i != STDERR_FILENO && i != STDIN_FILENO)
-            close(i);
-          else
-            open("/dev/null", O_RDWR);
+  /* get the path to our executable */
+  ret = readlink("/proc/self/exe", exe, sizeof(exe)-1);
+  if(ret == -1) {
+    fprintf(stderr, "Error: %s\n", strerror(errno));
+    return;
+  }
+  exe[ret] = 0;
+
+  /* close all file descriptors before exec */
+  for (i = 0; i < sysconf(_SC_OPEN_MAX); i++) {
+    if (i != STDOUT_FILENO && i != STDERR_FILENO && i != STDIN_FILENO) {
+      close(i);
+    }
+  }
 
   execl(exe, "dnsmasq", "-d", "--load-running", NULL);
   exit(EXIT_SUCCESS);
 }
 
+/* subscribes for the changes in dnsmasq YANG module in sysrepo */
 static void sysrepo_change_subscribe(sr_session_ctx_t *session, sr_subscription_ctx_t **subscription)
 {
   int rc = SR_ERR_OK;
-  rc = sr_module_change_subscribe(session, "dnsmasq-cfg", true, sysrepo_config_change_cb, NULL, subscription);
+
+  rc = sr_module_change_subscribe(session, "dnsmasq", true, sysrepo_config_change_cb, NULL, subscription);
   if (SR_ERR_OK != rc) {
-    printf("Error: %s\n", sr_strerror(rc));
+    fprintf(stderr, "Error: %s\n", sr_strerror(rc));
   }
 }
 
-void read_dhcp_config(sr_session_ctx_t *session, const char *list_xpath)
+/* read configuration of a DHCP pool */
+void read_dhcp_pool_config(sr_session_ctx_t *session, const char *list_xpath)
 {
   sr_val_t *values = NULL;
   size_t values_cnt = 0, i = 0;
   char req_xpath[PATH_MAX+1] = { 0, }, *name = NULL;
   int rc = SR_ERR_OK;
 
-  struct dhcp_context *dhcp = safe_malloc(sizeof(struct dhcp_context));
+  struct dhcp_context *dhcp = calloc(1, sizeof(struct dhcp_context));
+  if (NULL == dhcp) {
+      fprintf(stderr, "Error: %s\n", strerror(errno));
+      return;
+  }
   dhcp->lease_time = DEFLEASE;
-  dhcp->end = dhcp->start;
 
   strncat(req_xpath, list_xpath, PATH_MAX-3);
   strcat(req_xpath, "//*");
@@ -119,53 +134,64 @@ void read_dhcp_config(sr_session_ctx_t *session, const char *list_xpath)
           inet_pton(AF_INET, values[i].data.string_val, &dhcp->end);
         }
         if (0 == strcmp("/lease-time", name)) {
-            dhcp->lease_time = values[i].data.uint32_val;
+          dhcp->lease_time = values[i].data.uint32_val;
         }
     }
     sr_free_values(values, values_cnt);
 
     dhcp->next = daemon->dhcp;
     daemon->dhcp = dhcp;
+  } else {
+    fprintf(stderr, "Error: %s\n", strerror(errno));
   }
 }
 
+/* reads dnsmasq configuration from sysrepo */
 void read_sysrepo_config(sr_session_ctx_t *session)
 {
   sr_val_t *value = NULL, *values = NULL;
   size_t values_cnt = 0, i = 0;
   int rc = SR_ERR_OK;
 
-  rc = sr_get_item(session, "/dnsmasq-cfg:dnsmasq/username", &value);
+  rc = sr_get_item(session, "/dnsmasq:dnsmasq-cfg/username", &value);
   if (SR_ERR_OK == rc) {
     daemon->username = strdup(value->data.string_val);
     sr_free_val(value);
   }
 
-  rc = sr_get_item(session, "/dnsmasq-cfg:dnsmasq/groupname", &value);
+  rc = sr_get_item(session, "/dnsmasq:dnsmasq-cfg/groupname", &value);
   if (SR_ERR_OK == rc) {
     daemon->groupname = strdup(value->data.string_val);
     sr_free_val(value);
   }
 
-  rc = sr_get_item(session, "/dnsmasq-cfg:dnsmasq/dns-server/port", &value);
+  rc = sr_get_item(session, "/dnsmasq:dnsmasq-cfg/dns-server/enabled", &value);
   if (SR_ERR_OK == rc) {
-    daemon->port = value->data.uint32_val;
     sr_free_val(value);
-  }
 
-  rc = sr_get_item(session, "/dnsmasq-cfg:dnsmasq/dns-server/enabled", &value);
-  if (SR_ERR_OK == rc) {
-    sr_free_val(value);
+    /* dns server enabled, read its config */
+    rc = sr_get_item(session, "/dnsmasq:dnsmasq-cfg/dns-server/port", &value);
+    if (SR_ERR_OK == rc) {
+      daemon->port = value->data.uint32_val;
+      sr_free_val(value);
+    }
   } else if (SR_ERR_NOT_FOUND == rc) {
+    /* dns server disabled */
     daemon->port = 0;
   }
 
-  rc = sr_get_items(session, "/dnsmasq-cfg:dnsmasq/dhcp-server/dhcp-pool", &values, &values_cnt);
+  rc = sr_get_item(session, "/dnsmasq:dnsmasq-cfg/dhcp-server/enabled", &value);
   if (SR_ERR_OK == rc) {
-    for (i = 0; i < values_cnt; i++) {
-      read_dhcp_config(session, values[i].xpath);
+    sr_free_val(value);
+
+    /* dhcp server enabled, read its config */
+    rc = sr_get_items(session, "/dnsmasq:dnsmasq-cfg/dhcp-server/dhcp-pool", &values, &values_cnt);
+    if (SR_ERR_OK == rc) {
+      for (i = 0; i < values_cnt; i++) {
+        read_dhcp_pool_config(session, values[i].xpath);
+      }
+      sr_free_values(values, values_cnt);
     }
-    sr_free_values(values, values_cnt);
   }
 }
 
