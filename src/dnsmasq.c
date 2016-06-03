@@ -90,7 +90,12 @@ static void sysrepo_config_change_cb(sr_session_ctx_t *session, const char *modu
     }
   }
 
-  execl(exe, "dnsmasq", "-d", "--load-running", NULL);
+  /* restart itself (note: dnsmasq must be running under root privileges, otherwise this fails) */
+  if (option_bool(OPT_DEBUG)) {
+    execl(exe, "dnsmasq", "-d", "--load-running", NULL);
+  } else {
+    execl(exe, "dnsmasq", "--load-running", NULL);
+  }
   exit(EXIT_SUCCESS);
 }
 
