@@ -1,0 +1,9 @@
+<dnsmasq-cfg xmlns="urn:ietf:params:xml:ns:yang:dnsmasq">
+  <username>root</username>
+  <groupname>root</groupname>
+  <dns-server>
+    <enabled>true</enabled>
+    <port>53</port>
+  </dns-server>
+</dnsmasq-cfg>
+
