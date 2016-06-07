@@ -20,7 +20,7 @@ To use this integration, follow hese steps:
 
 1) [Install sysrepo](https://github.com/sysrepo/sysrepo/blob/master/INSTALL.md).
 
-2) Build & install dnsmasq.
+2) Build & install dnsmasq (`make && make install`).
 
 3) Initialize dnsmasq YANG model in sysrepo:
 ```
@@ -32,4 +32,4 @@ sysrepoctl --init --module=dnsmasq
 sysrepoctl --import=xml --module=dnsmasq < cfg/dnsmasq.xml
 ```
 
-Note: As a limitiation of this integration, dnsmasq needs to be running under root priviledges to make this work. The settings related to this are already part of the intial configuration imported in step 4).
+Note: Due to a limitiation of this integration, dnsmasq needs to be always running under root priviledges. The settings related to this are already part of the intial configuration imported in step 4).
