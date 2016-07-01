@@ -1,23 +1,28 @@
 module dnsmasq {
+
+  yang-version 1;
+
   namespace "urn:ietf:params:xml:ns:yang:dnsmasq";
+
   prefix dns;
 
   import ietf-inet-types {
     prefix inet;
   }
 
-  description
-    "Experimental dnsmasq tool YANG model.";
-  contact
-    "sysrepo@sysrepo.org";
+  organization "sysrepo.org";
+
+  contact "sysrepo-devel@sysrepo.org";
+
+  description "Experimental dnsmasq tool YANG model.";
 
   revision 2016-01-22 {
-    description
-      "Inital revision";
+    description "Inital revision";
+    reference "sysrepo.org";
   }
 
   container dnsmasq-cfg {
-    config true;
+    description "dnsmasq tool configuration.";
 
     leaf username {
       type string;
