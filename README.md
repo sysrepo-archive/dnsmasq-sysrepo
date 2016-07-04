@@ -24,12 +24,12 @@ To use this integration, follow hese steps:
 
 3) Initialize dnsmasq YANG model in sysrepo:
 ```
-sysrepoctl --init --module=dnsmasq
+sysrepoctl --init --module=sysrepo-dnsmasq
 ```
 
-4) Import initial dnsmasq configuration:
+4) Import initial dnsmasq configuration into startup datastore:
 ```
-sysrepoctl --import=xml --module=dnsmasq < cfg/dnsmasq.xml
+sysrepocfg --import=yang/dnsmasq.xml --datastore=startup sysrepo-dnsmasq
 ```
 
-Note: Due to a limitiation of this integration, dnsmasq needs to be always running under root priviledges. The settings related to this are already part of the intial configuration imported in step 4).
+Note: Due to the limitiations of this integration, dnsmasq needs to be always running under root priviledges. The settings related to this are already part of the intial configuration imported in step 4).
