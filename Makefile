@@ -43,7 +43,7 @@ XGETTEXT   = xgettext
 SRC = src
 PO  = po
 MAN = man
-CFG = cfg
+YANG = yang
 
 #################################################################
 
@@ -109,7 +109,7 @@ install-common :
 	$(INSTALL) -d $(DESTDIR)$(BINDIR) -d $(DESTDIR)$(MANDIR)/man8
 	$(INSTALL) -m 644 $(MAN)/dnsmasq.8 $(DESTDIR)$(MANDIR)/man8 
 	$(INSTALL) -m 755 $(BUILDDIR)/dnsmasq $(DESTDIR)$(BINDIR)
-	$(INSTALL) -m 644 $(CFG)/*.yang $(SYSREPO_SCHEMA_DIR)
+	$(INSTALL) -m 644 $(YANG)/*.yang $(SYSREPO_SCHEMA_DIR)
 
 all-i18n : $(BUILDDIR)
 	@cd $(BUILDDIR) && $(MAKE) \

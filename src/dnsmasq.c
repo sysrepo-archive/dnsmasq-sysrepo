@@ -62,11 +62,12 @@ static void sysrepo_cleanup(sr_conn_ctx_t *connection, sr_session_ctx_t *session
 }
 
 /* callback automatically callend whenever the configuration of dnsmasq YANG module has been changed in sysrepo */
-static void sysrepo_config_change_cb(sr_session_ctx_t *session, const char *module_name, void *private_ctx)
+static int sysrepo_config_change_cb(sr_session_ctx_t *session, const char *module_name, sr_notif_event_t event, void *private_ctx)
 {
-  (void)(session);
-  (void)(module_name);
-  (void)(private_ctx);
+  (void)session;
+  (void)event;
+  (void)module_name;
+  (void)private_ctx;
   char exe[1024] = { 0, };
   int ret = 0, i = 0;
 
@@ -79,7 +80,7 @@ static void sysrepo_config_change_cb(sr_session_ctx_t *session, const char *modu
   ret = readlink("/proc/self/exe", exe, sizeof(exe)-1);
   if(ret == -1) {
     fprintf(stderr, "Error: %s\n", strerror(errno));
-    return;
+    return SR_ERR_INTERNAL;
   }
   exe[ret] = 0;
 
@@ -96,7 +97,7 @@ static void sysrepo_config_change_cb(sr_session_ctx_t *session, const char *modu
   } else {
     execl(exe, "dnsmasq", "--load-running", NULL);
   }
-  exit(EXIT_SUCCESS);
+  return SR_ERR_OK;
 }
 
 /* subscribes for the changes in dnsmasq YANG module in sysrepo */
@@ -104,7 +105,7 @@ static void sysrepo_change_subscribe(sr_session_ctx_t *session, sr_subscription_
 {
   int rc = SR_ERR_OK;
 
-  rc = sr_module_change_subscribe(session, "dnsmasq", true, sysrepo_config_change_cb, NULL, subscription);
+  rc = sr_module_change_subscribe(session, "sysrepo-dnsmasq", sysrepo_config_change_cb, NULL, 0, SR_SUBSCR_DEFAULT, subscription);
   if (SR_ERR_OK != rc) {
     fprintf(stderr, "Error: %s\n", sr_strerror(rc));
   }
@@ -158,24 +159,24 @@ void read_sysrepo_config(sr_session_ctx_t *session)
   size_t values_cnt = 0, i = 0;
   int rc = SR_ERR_OK;
 
-  rc = sr_get_item(session, "/dnsmasq:dnsmasq-cfg/username", &value);
+  rc = sr_get_item(session, "/sysrepo-dnsmasq:dnsmasq-cfg/username", &value);
   if (SR_ERR_OK == rc) {
     daemon->username = strdup(value->data.string_val);
     sr_free_val(value);
   }
 
-  rc = sr_get_item(session, "/dnsmasq:dnsmasq-cfg/groupname", &value);
+  rc = sr_get_item(session, "/sysrepo-dnsmasq:dnsmasq-cfg/groupname", &value);
   if (SR_ERR_OK == rc) {
     daemon->groupname = strdup(value->data.string_val);
     sr_free_val(value);
   }
 
-  rc = sr_get_item(session, "/dnsmasq:dnsmasq-cfg/dns-server/enabled", &value);
+  rc = sr_get_item(session, "/sysrepo-dnsmasq:dnsmasq-cfg/dns-server/enabled", &value);
   if (SR_ERR_OK == rc) {
     sr_free_val(value);
 
     /* dns server enabled, read its config */
-    rc = sr_get_item(session, "/dnsmasq:dnsmasq-cfg/dns-server/port", &value);
+    rc = sr_get_item(session, "/sysrepo-dnsmasq:dnsmasq-cfg/dns-server/port", &value);
     if (SR_ERR_OK == rc) {
       daemon->port = value->data.uint32_val;
       sr_free_val(value);
@@ -185,12 +186,12 @@ void read_sysrepo_config(sr_session_ctx_t *session)
     daemon->port = 0;
   }
 
-  rc = sr_get_item(session, "/dnsmasq:dnsmasq-cfg/dhcp-server/enabled", &value);
+  rc = sr_get_item(session, "/sysrepo-dnsmasq:dnsmasq-cfg/dhcp-server/enabled", &value);
   if (SR_ERR_OK == rc) {
     sr_free_val(value);
 
     /* dhcp server enabled, read its config */
-    rc = sr_get_items(session, "/dnsmasq:dnsmasq-cfg/dhcp-server/dhcp-pool", &values, &values_cnt);
+    rc = sr_get_items(session, "/sysrepo-dnsmasq:dnsmasq-cfg/dhcp-server/dhcp-pool", &values, &values_cnt);
     if (SR_ERR_OK == rc) {
       for (i = 0; i < values_cnt; i++) {
         read_dhcp_pool_config(session, values[i].xpath);

@@ -1,10 +1,10 @@
-module dnsmasq {
+module sysrepo-dnsmasq {
 
   yang-version 1;
 
   namespace "urn:ietf:params:xml:ns:yang:dnsmasq";
 
-  prefix dns;
+  prefix srdns;
 
   import ietf-inet-types {
     prefix inet;
