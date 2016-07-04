@@ -10,7 +10,7 @@ Only following features of dnsmasq have been integrated with sysrepo so far:
 * dns-server: enabling/disabling the server, configuring the port that DNS serevr is bound to,
 * dhcp-server: enabling/disabling the server, configuring list of DHCP pools and their lease-time.
 
-See the [YANG model](cfg/dnsmasq%402016-01-22.yang) for more detailed information.
+See the [YANG model](yang/sysrepo-dnsmasq%402016-01-22.yang) or [full diff of the integration](https://github.com/sysrepo/dnsmasq-sysrepo/compare/a92c41eda58624056242f0c3a71c1efb7bba91b5...master) for more  information.
 
 ## Demo
 Asciinema-recored demo of this integration is available here: http://www.sysrepo.org/dnsmasq-demo
