@@ -1,5 +1,5 @@
 [![YANG via sysrepo](https://img.shields.io/badge/YANG-via_sysrepo-blue.svg)](yang/sysrepo-dnsmasq%402016-01-22.yang)
-# dnsmasq-sysrepo - NETCONF enabled fork of dnsmasq
+# dnsmasq-sysrepo - NETCONF enabled dnsmasq fork
 
 Fork of dnsmasq that uses sysrepo to store its configuration, which makes it remotely manageble via NETCONF.
 
