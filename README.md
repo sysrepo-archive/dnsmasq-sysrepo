@@ -25,7 +25,7 @@ To use this integration, follow hese steps:
 
 3) Initialize dnsmasq YANG model in sysrepo:
 ```
-sysrepoctl --init --module=sysrepo-dnsmasq
+sysrepoctl -i -g /etc/sysrepo/yang/sysrepo-dnsmasq\@2016-01-22.yang
 ```
 
 4) Import initial dnsmasq configuration into startup datastore:
