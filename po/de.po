@@ -1142,7 +1142,7 @@ msgstr "Ignoriere Anfragen vom nicht lokalen Netzwerk"
 #: forward.c:2256
 #, c-format
 msgid "Maximum number of concurrent DNS queries reached (max: %d)"
-msgstr "Maximale Anzahl an nebenläufiger DNS-Anfragen erreicht (Max: %d)"
+msgstr "Maximale Anzahl nebenläufiger DNS-Anfragen erreicht (Max: %d)"
 
 #: network.c:715
 #, c-format
